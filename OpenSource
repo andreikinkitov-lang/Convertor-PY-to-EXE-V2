@@ -1,0 +1,107 @@
+import os
+import subprocess
+import sys
+
+def find_file(filename):
+    """Ищет файл в папке где находится сам конвертер"""
+    exe_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Проверяем в папке с конвертером
+    file_path = os.path.join(exe_dir, filename)
+    if os.path.exists(file_path):
+        return file_path, exe_dir
+    
+    # Ищем во всех подпапках
+    for root, dirs, files in os.walk(exe_dir):
+        if filename in files:
+            return os.path.join(root, filename), os.path.dirname(os.path.join(root, filename))
+    
+    return None, None
+
+def convert_to_exe(py_file_path, target_dir):
+    """Конвертирует через PyInstaller в папке с файлом"""
+    file_name = os.path.splitext(os.path.basename(py_file_path))[0]
+    
+    print(f"\nКонвертирую: {py_file_path}")
+    print(f"Работаю в папке: {target_dir}")
+    
+    # Меняем рабочую директорию на папку с файлом
+    os.chdir(target_dir)
+    
+    # Используем python -m PyInstaller
+    cmd = [
+        sys.executable, '-m', 'PyInstaller',
+        '--onefile',
+        '--name', file_name,
+        '--distpath', target_dir,
+        '--workpath', os.path.join(target_dir, 'build'),
+        '--specpath', target_dir,
+        os.path.basename(py_file_path)
+    ]
+    
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=target_dir)
+        
+        if result.returncode == 0:
+            print(f"\n✅ Готово! Файл: {os.path.join(target_dir, file_name + '.exe')}")
+            
+            # Удаляем временные папки
+            for folder in ["build", "__pycache__"]:
+                folder_path = os.path.join(target_dir, folder)
+                if os.path.exists(folder_path):
+                    try:
+                        subprocess.run(f'rmdir /s /q "{folder_path}"', shell=True, cwd=target_dir)
+                    except:
+                        pass
+            
+            spec_file = os.path.join(target_dir, file_name + ".spec")
+            if os.path.exists(spec_file):
+                try:
+                    os.remove(spec_file)
+                except:
+                    pass
+                    
+            print(f"🗑️  Временные файлы удалены")
+            
+        else:
+            print(f"\n❌ Ошибка:")
+            print(result.stderr if result.stderr else result.stdout)
+            
+            # Если ошибка с путями, предлагаем ручной способ
+            print(f"\n💡 Ручной способ:")
+            print(f"1. Открой командную строку в папке: {target_dir}")
+            print(f"2. Выполни: {sys.executable} -m PyInstaller --onefile {os.path.basename(py_file_path)}")
+            
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+
+def main():
+    print("Конвертер PY в EXE")
+    print("=" * 40)
+    
+    while True:
+        filename = input("\nВведите имя файла (или 'exit'): ").strip()
+        
+        if filename.lower() == 'exit':
+            break
+        
+        if not filename:
+            continue
+        
+        # Добавляем .py если не указано
+        if not filename.endswith('.py'):
+            filename += '.py'
+        
+        # Ищем файл
+        file_path, target_dir = find_file(filename)
+        
+        if not file_path:
+            print(f"❌ Файл '{filename}' не найден в папке с программой")
+            print(f"Ищу в: {os.path.dirname(os.path.abspath(__file__))}")
+            continue
+        
+        # Конвертируем
+        convert_to_exe(file_path, target_dir)
+
+if __name__ == "__main__":
+    main()
