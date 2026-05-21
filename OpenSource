@@ -3,15 +3,14 @@ import subprocess
 import sys
 
 def find_file(filename):
-    """Ищет файл в папке где находится сам конвертер"""
     exe_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # Проверяем в папке с конвертером
+    
     file_path = os.path.join(exe_dir, filename)
     if os.path.exists(file_path):
         return file_path, exe_dir
     
-    # Ищем во всех подпапках
+    
     for root, dirs, files in os.walk(exe_dir):
         if filename in files:
             return os.path.join(root, filename), os.path.dirname(os.path.join(root, filename))
@@ -19,13 +18,13 @@ def find_file(filename):
     return None, None
 
 def convert_to_exe(py_file_path, target_dir):
-    """Конвертирует через PyInstaller в папке с файлом"""
+    
     file_name = os.path.splitext(os.path.basename(py_file_path))[0]
     
     print(f"\nКонвертирую: {py_file_path}")
     print(f"Работаю в папке: {target_dir}")
     
-    # Меняем рабочую директорию на папку с файлом
+    
     os.chdir(target_dir)
     
     # Используем python -m PyInstaller
@@ -45,7 +44,7 @@ def convert_to_exe(py_file_path, target_dir):
         if result.returncode == 0:
             print(f"\n✅ Готово! Файл: {os.path.join(target_dir, file_name + '.exe')}")
             
-            # Удаляем временные папки
+          
             for folder in ["build", "__pycache__"]:
                 folder_path = os.path.join(target_dir, folder)
                 if os.path.exists(folder_path):
@@ -88,11 +87,11 @@ def main():
         if not filename:
             continue
         
-        # Добавляем .py если не указано
+        
         if not filename.endswith('.py'):
             filename += '.py'
         
-        # Ищем файл
+        
         file_path, target_dir = find_file(filename)
         
         if not file_path:
@@ -100,7 +99,7 @@ def main():
             print(f"Ищу в: {os.path.dirname(os.path.abspath(__file__))}")
             continue
         
-        # Конвертируем
+       
         convert_to_exe(file_path, target_dir)
 
 if __name__ == "__main__":
